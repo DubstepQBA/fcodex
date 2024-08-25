@@ -40,6 +40,20 @@ Para comenzar a usar el framework, puedes crear un proyecto en npm. Crea un inde
     node index.js
     ```
 
+## Feature
+
+[] Soporte para Middleware Asíncrono
+[] Soporte para Middleware Global y de Rutas Específicas
+[] Manejo de Errores Centralizado
+[] CORS (Cross-Origin Resource Sharing)
+[] Rutas Dinámicas
+[] Generador de Código para Esqueletos de Proyecto
+[] Soporte para Validación de Datos
+[] Configuración Centralizada
+[] Logging Personalizable
+[] Autenticación y Autorización
+[] Soporte para Query Parameters
+
 ## Contribuciones
 
 Las contribuciones son bienvenidas. Por favor, abre un issue o una pull request para proponer cambios.
