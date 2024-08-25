@@ -12,6 +12,7 @@ export type HttpMethod =
 
 export class Request {
   private req: IncomingMessage;
+  public query: { [key: string]: string } = {};
 
   constructor(req: IncomingMessage) {
     this.req = req;

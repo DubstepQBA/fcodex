@@ -65,8 +65,19 @@ export class Router {
   }
 
   handleRequest(req: Request, res: Response) {
-    const routeKey = `${req.method}:${req.url}`;
+    const [path] = req.url.split("?");
+    const routeKey = `${req.method}:${path}`;
     const handler = this.routes[routeKey];
+
+    // Si existen query parameters, parsearlos
+    const queryString = req.url.split("?")[1];
+    if (queryString) {
+      const queryParams = new URLSearchParams(queryString);
+      req.query = {};
+      queryParams.forEach((value, key) => {
+        req.query[key] = value;
+      });
+    }
 
     if (handler) {
       handler(req, res);
