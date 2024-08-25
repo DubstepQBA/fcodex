@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    /* Basic Options */
+    "target": "ES2020", // Objetivo de ECMAScript, compatible con Node.js 14+
+    "module": "CommonJS", // Módulo para Node.js
+    "lib": [
+      "ES2020"
+    ], // Bibliotecas estándar
+    "outDir": "./dist", // Directorio de salida para los archivos compilados
+    "rootDir": "./src", // Directorio raíz de entrada
+    "declaration": true, // Generar archivos de declaración .d.ts para el tipado
+    "declarationMap": true, // Generar mapas de origen para declaraciones
+    "sourceMap": true, // Generar archivos sourceMap .js.map
+    "strict": true, // Habilitar todas las verificaciones estrictas
+    "esModuleInterop": true, // Habilitar interoperabilidad de módulos ES
+    "skipLibCheck": true, // Omitir verificación de tipos en archivos .d.ts
+    "forceConsistentCasingInFileNames": true, // Fuerza la coherencia en el uso de mayúsculas y minúsculas en los nombres de archivos
+    /* Module Resolution Options */
+    "moduleResolution": "node", // Estrategia de resolución de módulos
+    "resolveJsonModule": true, // Permite la importación de módulos JSON
+    "allowSyntheticDefaultImports": true, // Permite importaciones por defecto para módulos sin exportación por defecto
+    "isolatedModules": true, // Trata cada archivo como un módulo independiente
+    /* Advanced Options */
+    "incremental": true, // Compilación incremental para mejorar el rendimiento
+    "noImplicitAny": false // Si se debe generar un error en expresiones y declaraciones con tipo implícito any
+  },
+  "include": [
+    "src/**/*" // Incluir todos los archivos en el directorio src
+  ],
+  "exclude": [
+    "node_modules", // Excluir node_modules para evitar compilación de dependencias
+    "dist" // Excluir el directorio dist
+  ]
+}
