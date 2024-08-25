@@ -4,54 +4,41 @@ FCodeX es un simple y ligero framework para construir servidores HTTP en Node.js
 
 ## Instalación
 
-1. Clona este repositorio:
+1. NPM :
 
    ```sh
-   git clone <URL_DEL_REPOSITORIO>
-   cd <NOMBRE_DEL_DIRECTORIO>
-   ```
-
-2. Instala las dependencias::
-   ```sh
-   npm instal
-   ```
-3. Script
-   ```sh
-   npm run build  -> Compila el código TypeScript.
-   npm run start:dev -> Compila el código y luego ejecuta el archivo dist/examples/app.js
+   npm i fcodex
    ```
 
 ## Uso
 
-Para comenzar a usar el framework, puedes crear un archivo de ejemplo como app.ts en el directorio examples.
+Para comenzar a usar el framework, puedes crear un proyecto en npm. Crea un index.js (ts) en el directorio. Asegurate que tengas el type:"module" en el package.json.
 
 #### Crear un Servidor
 
-1. Crear un archivo index.ts
+1.  Crear un archivo index.ts
 
-   ```sh
-
-       import { Server, Router } from "../src";
-       import { loggerMiddleware } from "../src/middlewares/mw_logger";
-       import { deleteHandler, getHandler, postHandler } from "./routes";
-
+    ```sh
+       import { Server } from "fcodex";
        const app = new Server();
        const router = app.router;
 
-       // Usar el middleware de logging
+       // Usar el middleware de logging (opcional)
        app.use(loggerMiddleware);
 
-       // Definir rutas
-       router.get("/hello", getHandler);
-       router.post("/data", postHandler);
-       router.delete("/delete", deleteHandler);
-
-       // Iniciar el servidor
-       app.listen(3000, () => {
-       console.log("Server is running on port 3000");
+       router.get("/hello", (req, res) => {
+       res.status(200).send("Hello");
        });
 
-   ```
+       app.listen(3000, () => {
+       console.log(`Server is running on port 3000`);
+       });
+    ```
+
+2.  Correr el proyecto con Nodejs.
+    ```sh
+    node index.js
+    ```
 
 ## Contribuciones
 
