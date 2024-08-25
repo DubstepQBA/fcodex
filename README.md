@@ -47,7 +47,7 @@ Para comenzar a usar el framework, puedes crear un proyecto en npm. Crea un inde
 - [ ] Soporte para Middleware Global y de Rutas Específicas
 - [ ] Manejo de Errores Centralizado
 - [ ] CORS (Cross-Origin Resource Sharing)
-- [ ] Rutas Dinámicas
+- [x] Rutas Dinámicas
 - [ ] Generador de Código para Esqueletos de Proyecto
 - [ ] Soporte para Validación de Datos
 - [ ] Configuración Centralizada
