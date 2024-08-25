@@ -1,4 +1,4 @@
-//request.ts
+// request.ts
 import { IncomingMessage } from "http";
 
 export type HttpMethod =
@@ -13,6 +13,7 @@ export type HttpMethod =
 export class Request {
   private req: IncomingMessage;
   public query: { [key: string]: string } = {};
+  public params: { [key: string]: string } = {};
 
   constructor(req: IncomingMessage) {
     this.req = req;

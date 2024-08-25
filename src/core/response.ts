@@ -1,8 +1,8 @@
-//response.ts
 import { ServerResponse } from "http";
 
 export class Response {
   private res: ServerResponse;
+  private _headersSent: boolean = false;
 
   constructor(res: ServerResponse) {
     this.res = res;
@@ -10,50 +10,74 @@ export class Response {
 
   write(
     chunk: any,
-    encoding?: BufferEncoding | ((error: Error | null | undefined) => void),
+    encodingOrCallback?:
+      | BufferEncoding
+      | ((error: Error | null | undefined) => void),
     callback?: (error: Error | null | undefined) => void
   ): boolean {
-    if (typeof encoding === "function") {
+    if (this._headersSent) {
+      return false;
+    }
+
+    if (typeof encodingOrCallback === "function") {
+      return this.res.write(chunk, encodingOrCallback);
+    } else {
       return this.res.write(
         chunk,
-        encoding as (error: Error | null | undefined) => void
+        encodingOrCallback as BufferEncoding,
+        callback
       );
-    } else if (encoding) {
-      return this.res.write(chunk, encoding, callback);
-    } else {
-      return this.res.write(chunk, callback);
     }
   }
 
-  end(data?: any) {
-    this.res.end(data);
+  end(data?: any): void {
+    if (data) this.write(data);
+    this.res.end();
+    this._headersSent = true;
   }
 
-  setHeader(name: string, value: string | number) {
+  setHeader(name: string, value: string | number): this {
+    if (this._headersSent) {
+      return this;
+    }
     this.res.setHeader(name, value);
-  }
-
-  writeHead(statusCode: number, headers?: any) {
-    this.res.writeHead(statusCode, headers);
-  }
-
-  status(code: number) {
-    this.res.writeHead(code);
     return this;
   }
 
-  send(body: any) {
-    if (typeof body === "string") {
+  writeHead(
+    statusCode: number,
+    headers?: Record<string, string | number>
+  ): this {
+    if (this._headersSent) {
+      return this;
+    }
+    this.res.writeHead(statusCode, headers);
+    this._headersSent = true;
+    return this;
+  }
+
+  status(code: number): this {
+    return this.writeHead(code);
+  }
+
+  send(body: any): void {
+    if (typeof body === "string" || Buffer.isBuffer(body)) {
+      this.setHeader("Content-Type", "text/plain");
       this.write(body);
-    } else if (Buffer.isBuffer(body)) {
-      this.write(body);
-    } else if (body) {
-      this.write(JSON.stringify(body));
+    } else if (typeof body === "object") {
+      this.json(body);
     }
     this.end();
   }
-  json(data: any) {
-    this.res.setHeader("Content-Type", "application/json");
-    this.res.end(JSON.stringify(data));
+
+  json(data: any): void {
+    if (!this._headersSent) {
+      this.setHeader("Content-Type", "application/json");
+    }
+    this.send(JSON.stringify(data));
+  }
+
+  get headersSent(): boolean {
+    return this._headersSent;
   }
 }
