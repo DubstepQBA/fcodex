@@ -25,7 +25,7 @@
     "noImplicitAny": false // Si se debe generar un error en expresiones y declaraciones con tipo implícito any
   },
   "include": [
-    "src/**/*" // Incluir todos los archivos en el directorio src
+    "src/**/*.ts"
   ],
   "exclude": [
     "node_modules", // Excluir node_modules para evitar compilación de dependencias
