@@ -13,11 +13,11 @@ export class Request {
   private req: IncomingMessage;
   public query: { [key: string]: string } = {};
   public params: { [key: string]: string } = {};
-  public body: any; // Aquí almacenaremos el cuerpo procesado
+  public body: Promise<any> | null = null; // Aquí almacenaremos el cuerpo procesado
 
   constructor(req: IncomingMessage) {
     this.req = req;
-    this.processBody(); // Procesa el cuerpo al crear la instancia
+    this.body = this.processBody(); // Procesa el cuerpo al crear la instancia
   }
 
   get headers() {
@@ -32,24 +32,43 @@ export class Request {
     return this.req.method as HttpMethod; // Cast to HttpMethod
   }
 
-  private processBody() {
-    this.body = new Promise((resolve, reject) => {
-      let data = "";
-      this.req.on("data", (chunk) => {
-        data += chunk;
-      });
+  private async processBody(): Promise<any> {
+    if (
+      this.req.method === "POST" ||
+      this.req.method === "PUT" ||
+      this.req.method === "PATCH"
+    ) {
+      return new Promise((resolve, reject) => {
+        let data = "";
+        this.req.on("data", (chunk) => {
+          data += chunk;
+        });
 
-      this.req.on("end", () => {
-        try {
-          resolve(JSON.parse(data));
-        } catch (err) {
-          reject(err);
-        }
+        this.req.on("end", () => {
+          try {
+            if (data.trim() === "") {
+              resolve(null); // Devolver null si no hay datos
+            } else {
+              resolve(JSON.parse(data)); // Intentar analizar JSON
+            }
+          } catch (err) {
+            reject(new Error("Failed to parse JSON")); // Manejar errores de análisis JSON
+          }
+        });
+
+        this.req.on("error", (err) => {
+          reject(err); // Manejar errores de solicitud
+        });
       });
-    });
+    } else {
+      return null; // No se procesa el cuerpo para otros métodos
+    }
   }
 
   async json(): Promise<any> {
-    return this.body; // Devuelve el cuerpo procesado
+    if (this.body) {
+      return this.body;
+    }
+    throw new Error("Body has not been processed");
   }
 }

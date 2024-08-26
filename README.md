@@ -54,6 +54,28 @@ Para comenzar a usar el framework, puedes crear un proyecto en npm. Crea un inde
 - [ ] Logging Personalizable
 - [ ] Autenticación y Autorización
 
+## Métrica autocannon
+
+| Métrica                       | FCodeX            | Express           |
+| ----------------------------- | ----------------- | ----------------- |
+| **Latencia Promedio**         | 118.16 ms         | 256.01 ms         |
+| **Latencia 2.5%**             | 49 ms             | 200 ms            |
+| **Latencia 50%**              | 107 ms            | 239 ms            |
+| **Latencia 97.5%**            | 274 ms            | 354 ms            |
+| **Latencia 99%**              | 436 ms            | 410 ms            |
+| **Requisiciones por Segundo** | 8,430.8           | 3,883.3           |
+| **Bytes por Segundo**         | 1.54 MB           | 928 kB            |
+| **Total de Requisiciones**    | 254,000 en 30.12s | 117,000 en 30.08s |
+| **Errores**                   | No reportado      | No reportado      |
+
+### **Observaciones:**
+
+- **Latencia**: `fcodex` tiene una latencia promedio menor, lo cual es mejor.
+- **Requisiciones por Segundo**: `fcodex` maneja más solicitudes por segundo.
+- **Bytes por Segundo**: `fcodex` maneja más datos por segundo.
+- **Requisiciones por Segundo**: `fcodex` es aproximadamente 117.53% más rápido.
+- **Bytes por Segundo**: `fcodex`maneja aproximadamente 65.54% más datos por segundo.
+
 ## Contribuciones
 
 Las contribuciones son bienvenidas. Por favor, abre un issue o una pull request para proponer cambios.

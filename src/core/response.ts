@@ -8,14 +8,14 @@ export class Response {
     this.res = res;
   }
 
-  private ensureHeadersNotSent() {
+  private ensureHeadersNotSent(): boolean {
     if (this._headersSent) {
       console.warn(
         "Attempted to send headers or body after they have already been sent."
       );
-      return false; // Indicate that the operation should not continue
+      return false;
     }
-    return true; // It's safe to continue
+    return true;
   }
 
   write(
@@ -27,27 +27,25 @@ export class Response {
   ): boolean {
     if (!this.ensureHeadersNotSent()) return false;
 
-    if (typeof encodingOrCallback === "function") {
-      return this.res.write(chunk, encodingOrCallback);
-    } else {
-      return this.res.write(
-        chunk,
-        encodingOrCallback as BufferEncoding,
-        callback
-      );
-    }
+    return typeof encodingOrCallback === "function"
+      ? this.res.write(chunk, encodingOrCallback)
+      : this.res.write(chunk, encodingOrCallback as BufferEncoding, callback);
   }
 
   end(data?: any): void {
-    if (data && this.ensureHeadersNotSent()) this.write(data);
-    this.res.end();
-    this._headersSent = true;
+    if (!this.ensureHeadersNotSent()) return;
+
+    if (data) this.write(data);
+    if (!this._headersSent) {
+      this.res.end();
+      this._headersSent = true;
+    }
   }
 
   setHeader(name: string, value: string | number): this {
-    if (!this.ensureHeadersNotSent()) return this;
-
-    this.res.setHeader(name, value);
+    if (this.ensureHeadersNotSent()) {
+      this.res.setHeader(name, value);
+    }
     return this;
   }
 
@@ -55,10 +53,10 @@ export class Response {
     statusCode: number,
     headers?: Record<string, string | number>
   ): this {
-    if (!this.ensureHeadersNotSent()) return this;
-
-    this.res.writeHead(statusCode, headers);
-    this._headersSent = true;
+    if (this.ensureHeadersNotSent()) {
+      this.res.writeHead(statusCode, headers);
+      this._headersSent = true;
+    }
     return this;
   }
 
@@ -69,17 +67,29 @@ export class Response {
     return this;
   }
 
-  send(body: any): void {
+  send(body?: any): void {
     if (!this.ensureHeadersNotSent()) return;
 
-    if (typeof body === "string" || Buffer.isBuffer(body)) {
-      this.setHeader("Content-Type", "text/plain");
+    let contentType = "text/plain";
+    let responseBody: string = "";
+
+    if (body === undefined || body === null) {
+      responseBody = "No content";
+    } else if (typeof body === "string") {
+      contentType = "text/plain";
+      responseBody = body;
+    } else if (Buffer.isBuffer(body)) {
+      contentType = "application/octet-stream"; // Use a generic content type for buffers
+      responseBody = body.toString(); // Convert Buffer to string
     } else if (typeof body === "object") {
-      this.setHeader("Content-Type", "application/json");
-      body = JSON.stringify(body);
+      contentType = "application/json";
+      responseBody = JSON.stringify(body);
+    } else {
+      responseBody = "";
     }
 
-    this.write(body);
+    this.setHeader("Content-Type", contentType);
+    this.write(responseBody);
     this.end();
   }
 
@@ -87,7 +97,7 @@ export class Response {
     if (!this.ensureHeadersNotSent()) return;
 
     this.setHeader("Content-Type", "application/json");
-    this.send(JSON.stringify(data));
+    this.send(data); // `send` will handle JSON.stringify
   }
 
   get headersSent(): boolean {
