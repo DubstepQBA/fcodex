@@ -1,7 +1,7 @@
 import { Request } from "../../core/request";
 import { Response } from "../../core/response";
 
-export const loggerMiddleware = (
+export const loggerMiddleware = async (
   req: Request,
   res: Response,
   next: () => void
