@@ -1,4 +1,3 @@
-// request.ts
 import { IncomingMessage } from "http";
 
 export type HttpMethod =
@@ -14,9 +13,11 @@ export class Request {
   private req: IncomingMessage;
   public query: { [key: string]: string } = {};
   public params: { [key: string]: string } = {};
+  public body: any; // Aquí almacenaremos el cuerpo procesado
 
   constructor(req: IncomingMessage) {
     this.req = req;
+    this.processBody(); // Procesa el cuerpo al crear la instancia
   }
 
   get headers() {
@@ -31,8 +32,8 @@ export class Request {
     return this.req.method as HttpMethod; // Cast to HttpMethod
   }
 
-  async json(): Promise<any> {
-    return new Promise((resolve, reject) => {
+  private processBody() {
+    this.body = new Promise((resolve, reject) => {
       let data = "";
       this.req.on("data", (chunk) => {
         data += chunk;
@@ -46,5 +47,9 @@ export class Request {
         }
       });
     });
+  }
+
+  async json(): Promise<any> {
+    return this.body; // Devuelve el cuerpo procesado
   }
 }

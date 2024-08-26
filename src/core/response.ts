@@ -8,6 +8,16 @@ export class Response {
     this.res = res;
   }
 
+  private ensureHeadersNotSent() {
+    if (this._headersSent) {
+      console.warn(
+        "Attempted to send headers or body after they have already been sent."
+      );
+      return false; // Indicate that the operation should not continue
+    }
+    return true; // It's safe to continue
+  }
+
   write(
     chunk: any,
     encodingOrCallback?:
@@ -15,9 +25,7 @@ export class Response {
       | ((error: Error | null | undefined) => void),
     callback?: (error: Error | null | undefined) => void
   ): boolean {
-    if (this._headersSent) {
-      return false;
-    }
+    if (!this.ensureHeadersNotSent()) return false;
 
     if (typeof encodingOrCallback === "function") {
       return this.res.write(chunk, encodingOrCallback);
@@ -31,15 +39,14 @@ export class Response {
   }
 
   end(data?: any): void {
-    if (data) this.write(data);
+    if (data && this.ensureHeadersNotSent()) this.write(data);
     this.res.end();
     this._headersSent = true;
   }
 
   setHeader(name: string, value: string | number): this {
-    if (this._headersSent) {
-      return this;
-    }
+    if (!this.ensureHeadersNotSent()) return this;
+
     this.res.setHeader(name, value);
     return this;
   }
@@ -48,32 +55,38 @@ export class Response {
     statusCode: number,
     headers?: Record<string, string | number>
   ): this {
-    if (this._headersSent) {
-      return this;
-    }
+    if (!this.ensureHeadersNotSent()) return this;
+
     this.res.writeHead(statusCode, headers);
     this._headersSent = true;
     return this;
   }
 
   status(code: number): this {
-    return this.writeHead(code);
+    if (this.ensureHeadersNotSent()) {
+      this.res.statusCode = code;
+    }
+    return this;
   }
 
   send(body: any): void {
+    if (!this.ensureHeadersNotSent()) return;
+
     if (typeof body === "string" || Buffer.isBuffer(body)) {
       this.setHeader("Content-Type", "text/plain");
-      this.write(body);
     } else if (typeof body === "object") {
-      this.json(body);
+      this.setHeader("Content-Type", "application/json");
+      body = JSON.stringify(body);
     }
+
+    this.write(body);
     this.end();
   }
 
   json(data: any): void {
-    if (!this._headersSent) {
-      this.setHeader("Content-Type", "application/json");
-    }
+    if (!this.ensureHeadersNotSent()) return;
+
+    this.setHeader("Content-Type", "application/json");
     this.send(JSON.stringify(data));
   }
 
