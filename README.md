@@ -43,7 +43,7 @@ Para comenzar a usar el framework, puedes crear un proyecto en npm. Crea un inde
 # Features
 
 - [x] Soporte para Query Parameters
-- [ ] Soporte para Middleware Asíncrono
+- [x] Soporte para Middleware Asíncrono
 - [ ] Soporte para Middleware Global y de Rutas Específicas
 - [ ] Manejo de Errores Centralizado
 - [ ] CORS (Cross-Origin Resource Sharing)
