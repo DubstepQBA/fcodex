@@ -8,7 +8,8 @@
     "build": "tsc",
     "start": "node dist/example.js",
     "start:dev": "npm run build && npm run start",
-    "test": "jest"
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "bin": {
     "fcodex": "./src/bin/fcodex.js"

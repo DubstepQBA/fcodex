@@ -7,8 +7,12 @@ import { Response } from "./response";
 type Middleware = (req: Request, res: Response, next: () => void) => void;
 
 export class Server {
+  static close(done: jest.DoneCallback) {
+    throw new Error("Method not implemented.");
+  }
   private _router: Router;
   private middlewares: Middleware[] = [];
+  private server: http.Server | null = null;
 
   constructor() {
     this._router = new Router();
@@ -45,5 +49,6 @@ export class Server {
     );
 
     server.listen(port, callback);
+    return server;
   }
 }

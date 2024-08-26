@@ -71,7 +71,7 @@ export class Response {
     if (!this.ensureHeadersNotSent()) return;
 
     let contentType = "text/plain";
-    let responseBody: string = "";
+    let responseBody: any = ""; // Cambiado a any para manejar Buffer también
 
     if (body === undefined || body === null) {
       responseBody = "No content";
@@ -79,8 +79,8 @@ export class Response {
       contentType = "text/plain";
       responseBody = body;
     } else if (Buffer.isBuffer(body)) {
-      contentType = "application/octet-stream"; // Use a generic content type for buffers
-      responseBody = body.toString(); // Convert Buffer to string
+      contentType = "application/octet-stream";
+      responseBody = body; // No convertir a string
     } else if (typeof body === "object") {
       contentType = "application/json";
       responseBody = JSON.stringify(body);
