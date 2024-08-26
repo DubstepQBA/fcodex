@@ -25,13 +25,13 @@ export class Server {
 
   listen(port: number, callback: () => void) {
     const server = http.createServer(
-      (req: IncomingMessage, res: ServerResponse) => {
+      async (req: IncomingMessage, res: ServerResponse) => {
         const request = new Request(req);
         const response = new Response(res);
 
         let idx = 0;
 
-        const next = () => {
+        const next = async () => {
           if (idx < this.middlewares.length) {
             const middleware = this.middlewares[idx++];
             middleware(request, response, next);
@@ -40,7 +40,7 @@ export class Server {
           }
         };
 
-        next();
+        await next();
       }
     );
 
