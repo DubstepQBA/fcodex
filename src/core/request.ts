@@ -13,11 +13,12 @@ export class Request {
   private req: IncomingMessage;
   public query: { [key: string]: string } = {};
   public params: { [key: string]: string } = {};
-  public body: Promise<any> | null = null; // Aquí almacenaremos el cuerpo procesado
+  public body: Promise<any> | null = null;
+  public user?: any; // Nueva propiedad `user`
 
   constructor(req: IncomingMessage) {
     this.req = req;
-    this.body = this.processBody(); // Procesa el cuerpo al crear la instancia
+    this.body = this.processBody();
   }
 
   get headers() {
@@ -29,7 +30,7 @@ export class Request {
   }
 
   get method() {
-    return this.req.method as HttpMethod; // Cast to HttpMethod
+    return this.req.method as HttpMethod;
   }
 
   private async processBody(): Promise<any> {

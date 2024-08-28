@@ -1,54 +1,81 @@
-// server.ts
 import http, { IncomingMessage, ServerResponse } from "http";
 import { Router } from "./router";
 import { Request } from "./request";
 import { Response } from "./response";
+import { logger } from "../modules";
 
 type Middleware = (req: Request, res: Response, next: () => void) => void;
 
 export class Server {
-  static close(done: jest.DoneCallback) {
-    throw new Error("Method not implemented.");
-  }
   private _router: Router;
-  private middlewares: Middleware[] = [];
+  private middlewares: Middleware[] = [logger];
   private server: http.Server | null = null;
 
   constructor() {
     this._router = new Router();
   }
 
-  use(middleware: Middleware) {
+  use(middleware: Middleware): this {
     this.middlewares.push(middleware);
+    return this; // Enable method chaining
   }
 
-  // Exponer el router para que las rutas puedan ser añadidas fuera del Server
-  get router() {
+  get router(): Router {
     return this._router;
   }
 
-  listen(port: number, callback: () => void) {
-    const server = http.createServer(
-      async (req: IncomingMessage, res: ServerResponse) => {
-        const request = new Request(req);
-        const response = new Response(res);
+  private async handleRequest(
+    req: IncomingMessage,
+    res: ServerResponse
+  ): Promise<void> {
+    const request = new Request(req);
+    const response = new Response(res);
 
-        let idx = 0;
+    let idx = 0;
 
-        const next = async () => {
-          if (idx < this.middlewares.length) {
-            const middleware = this.middlewares[idx++];
-            middleware(request, response, next);
-          } else {
-            this._router.handleRequest(request, response);
-          }
-        };
-
-        await next();
+    const next = async (): Promise<void> => {
+      if (idx < this.middlewares.length) {
+        const middleware = this.middlewares[idx++];
+        try {
+          middleware(request, response, next);
+        } catch (err) {
+          this.handleError(err, response);
+        }
+      } else {
+        this._router.handleRequest(request, response);
       }
-    );
+    };
 
-    server.listen(port, callback);
-    return server;
+    try {
+      await next();
+    } catch (err) {
+      this.handleError(err, response);
+    }
+  }
+
+  private handleError(error: any, res: Response): void {
+    console.error("Server error:", error);
+    if (!res.headersSent) {
+      res.status(500).send({ error: "Internal Server Error" });
+    }
+  }
+
+  listen(port: number, callback?: () => void): http.Server {
+    if (this.server) {
+      throw new Error("Server is already running");
+    }
+
+    this.server = http.createServer(this.handleRequest.bind(this));
+    this.server.listen(port, callback);
+
+    return this.server;
+  }
+
+  close(callback?: (err?: Error) => void): void {
+    if (this.server) {
+      this.server.close(callback);
+    } else if (callback) {
+      callback(new Error("Server is not running"));
+    }
   }
 }

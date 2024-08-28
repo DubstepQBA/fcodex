@@ -1,70 +1,104 @@
-import { Request } from "./request";
-import { Response } from "./response";
-import { match, MatchFunction, Path } from "path-to-regexp";
+import { Request, Response } from "./";
+import { match, MatchFunction } from "path-to-regexp";
 
 type Method = "GET" | "POST" | "DELETE" | "PUT" | "PATCH";
 type Handler = (req: Request, res: Response) => void;
-type Route = { method: Method; path: string; handler: Handler };
+type Middleware = (req: Request, res: Response, next: () => void) => void;
+
+interface Route {
+  method: Method;
+  path: string;
+  handler: Handler;
+  middlewares: Middleware[];
+}
 
 export class Router {
   private routes: Route[] = [];
   private basePath: string = "";
-  private middlewares: Handler[] = [];
+  private middlewares: Middleware[] = [];
 
   constructor(basePath: string = "") {
     this.basePath = basePath;
   }
 
-  private addRoute(method: Method, path: string, handler: Handler) {
-    this.routes.push({ method, path: `${this.basePath}${path}`, handler });
+  // Método para agregar rutas con middlewares específicos
+  private addRoute(
+    method: Method,
+    path: string,
+    handler: Handler,
+    middlewares: Middleware[] = []
+  ) {
+    this.routes.push({
+      method,
+      path: `${this.basePath}${path}`,
+      handler,
+      middlewares,
+    });
   }
 
-  useMiddleware(middleware: Handler) {
+  // Método para agregar middlewares globales al router
+  use(middleware: Middleware) {
     this.middlewares.push(middleware);
   }
 
-  addRoutes(method: Method, routes: { [path: string]: Handler }) {
-    for (const [path, handler] of Object.entries(routes)) {
-      this.addRoute(method, path, handler);
-    }
+  // Métodos para añadir rutas individuales con sus respectivos manejadores
+  get(path: string, handler: Handler, middlewares: Middleware[] = []) {
+    this.addRoute("GET", path, handler, middlewares);
   }
 
-  get(path: string, handler: Handler) {
-    this.addRoute("GET", path, handler);
+  post(path: string, handler: Handler, middlewares: Middleware[] = []) {
+    this.addRoute("POST", path, handler, middlewares);
   }
 
-  post(path: string, handler: Handler) {
-    this.addRoute("POST", path, handler);
+  delete(path: string, handler: Handler, middlewares: Middleware[] = []) {
+    this.addRoute("DELETE", path, handler, middlewares);
   }
 
-  delete(path: string, handler: Handler) {
-    this.addRoute("DELETE", path, handler);
+  put(path: string, handler: Handler, middlewares: Middleware[] = []) {
+    this.addRoute("PUT", path, handler, middlewares);
   }
 
-  put(path: string, handler: Handler) {
-    this.addRoute("PUT", path, handler);
+  patch(path: string, handler: Handler, middlewares: Middleware[] = []) {
+    this.addRoute("PATCH", path, handler, middlewares);
   }
 
-  patch(path: string, handler: Handler) {
-    this.addRoute("PATCH", path, handler);
-  }
-
-  use(prefix: string, router: Router) {
+  // Método para anidar routers
+  useRouter(prefix: string, router: Router) {
     router.basePath = `${this.basePath}${prefix}`;
     this.routes.push(...router.routes);
   }
 
-  private async executeMiddlewares(req: Request, res: Response) {
-    for (const middleware of this.middlewares) {
-      await middleware(req, res);
-      if (res.headersSent) return; // Stop middleware chain if response has been sent
-    }
+  // Ejecutar middlewares en orden
+  private async executeMiddlewares(
+    middlewares: Middleware[],
+    req: Request,
+    res: Response,
+    next: () => void
+  ) {
+    let index = 0;
+
+    const exec = async () => {
+      if (index < middlewares.length) {
+        await middlewares[index++](req, res, exec);
+      } else {
+        next();
+      }
+    };
+
+    await exec();
   }
 
+  // Buscar una ruta que coincida con la solicitud
   private findRoute(
     method: Method,
     path: string
-  ): { handler: Handler; params: Record<string, string> } | undefined {
+  ):
+    | {
+        handler: Handler;
+        middlewares: Middleware[];
+        params: Record<string, string>;
+      }
+    | undefined {
     for (const route of this.routes) {
       if (route.method === method) {
         const matchFn: MatchFunction<Record<string, string>> = match(
@@ -73,30 +107,38 @@ export class Router {
         const matchResult = matchFn(path);
 
         if (matchResult) {
-          return { handler: route.handler, params: matchResult.params };
+          return {
+            handler: route.handler,
+            middlewares: route.middlewares,
+            params: matchResult.params,
+          };
         }
       }
     }
     return undefined;
   }
 
+  // Manejo de la solicitud
   async handleRequest(req: Request, res: Response) {
-    await this.executeMiddlewares(req, res);
-    if (res.headersSent) return;
+    await this.executeMiddlewares(this.middlewares, req, res, async () => {
+      const [path] = req.url.split("?");
+      const method = req.method as Method;
+      const route = this.findRoute(method, path);
 
-    const [path] = req.url.split("?");
-    const method = req.method as Method;
-    const route = this.findRoute(method, path);
+      if (route) {
+        req.params = route.params;
+        this.parseQueryParams(req);
 
-    if (route) {
-      req.params = route.params;
-      this.parseQueryParams(req);
-      route.handler(req, res);
-    } else {
-      this.handleNotFound(req, res);
-    }
+        await this.executeMiddlewares(route.middlewares, req, res, () => {
+          route.handler(req, res);
+        });
+      } else {
+        this.handleNotFound(req, res);
+      }
+    });
   }
 
+  // Parseo de parámetros de consulta
   private parseQueryParams(req: Request) {
     const queryString = req.url.split("?")[1];
     if (queryString) {
@@ -108,6 +150,7 @@ export class Router {
     }
   }
 
+  // Manejo de rutas no encontradas
   private handleNotFound(req: Request, res: Response) {
     res.status(404).send("Not Found");
   }

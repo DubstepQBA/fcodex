@@ -1,10 +1,14 @@
 import { ServerResponse } from "http";
+import { EventEmitter } from "events";
 
-export class Response {
+export class Response extends EventEmitter {
   private res: ServerResponse;
   private _headersSent: boolean = false;
+  public statusCode: number = 200; // Agrega una propiedad `statusCode`
+  public statusMessage: string = "OK"; // Agrega una propiedad `statusMessage`
 
   constructor(res: ServerResponse) {
+    super();
     this.res = res;
   }
 
@@ -39,6 +43,7 @@ export class Response {
     if (!this._headersSent) {
       this.res.end();
       this._headersSent = true;
+      this.emit("finish"); // Emitir el evento 'finish' después de finalizar
     }
   }
 
@@ -51,18 +56,23 @@ export class Response {
 
   writeHead(
     statusCode: number,
+    statusMessage?: string,
     headers?: Record<string, string | number>
   ): this {
     if (this.ensureHeadersNotSent()) {
-      this.res.writeHead(statusCode, headers);
+      this.res.writeHead(statusCode, statusMessage, headers);
       this._headersSent = true;
+      this.statusCode = statusCode; // Establecer `statusCode`
+      this.statusMessage = statusMessage || "OK"; // Establecer `statusMessage`
+      this.emit("finish"); // Emitir el evento 'finish' después de escribir los encabezados
     }
     return this;
   }
 
   status(code: number): this {
     if (this.ensureHeadersNotSent()) {
-      this.res.statusCode = code;
+      this.statusCode = code; // Establecer `statusCode`
+      this.res.statusCode = code; // También establecer `statusCode` de `ServerResponse` para compatibilidad
     }
     return this;
   }
@@ -71,7 +81,7 @@ export class Response {
     if (!this.ensureHeadersNotSent()) return;
 
     let contentType = "text/plain";
-    let responseBody: any = ""; // Cambiado a any para manejar Buffer también
+    let responseBody: any = "";
 
     if (body === undefined || body === null) {
       responseBody = "No content";
@@ -80,7 +90,7 @@ export class Response {
       responseBody = body;
     } else if (Buffer.isBuffer(body)) {
       contentType = "application/octet-stream";
-      responseBody = body; // No convertir a string
+      responseBody = body;
     } else if (typeof body === "object") {
       contentType = "application/json";
       responseBody = JSON.stringify(body);
