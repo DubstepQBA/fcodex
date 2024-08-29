@@ -51,7 +51,6 @@ Para comenzar a usar el framework, puedes crear un proyecto en npm. Crea un inde
 - [x] Generador de Código para Esqueletos de Proyecto
 - [x] Soporte para Validación de Datos
 - [ ] Configuración Centralizada
-- [ ] Logging Personalizable
 - [ ] Autenticación y Autorización
 
 ## Métrica autocannon
