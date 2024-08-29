@@ -29,6 +29,7 @@
   ],
   "exclude": [
     "node_modules", // Excluir node_modules para evitar compilación de dependencias
-    "dist" // Excluir el directorio dist
+    "dist", // Excluir el directorio dist
+    "src/tests"
   ]
 }

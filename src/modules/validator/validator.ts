@@ -5,7 +5,14 @@ interface ValidationError {
 
 export interface ValidationSchema {
   [key: string]: {
-    type: "string" | "number" | "boolean" | "array" | "object";
+    type:
+      | "string"
+      | "number"
+      | "boolean"
+      | "array"
+      | "object"
+      | "email"
+      | "date";
     required?: boolean;
     minLength?: number;
     maxLength?: number;
@@ -83,6 +90,27 @@ export class Validator {
           const customValidation = rules.custom(value);
           if (customValidation !== true) {
             errors.push({ field, message: customValidation });
+          }
+        }
+
+        if (rules.type === "email") {
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+            errors.push({ field, message: "Invalid email address." });
+          }
+        }
+
+        if (rules.type === "date") {
+          if (typeof value !== "string") {
+            errors.push({
+              field,
+              message: "Invalid date format. Must be YYYY-MM-DD.",
+            });
+          }
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+            errors.push({
+              field,
+              message: "Invalid date format. Must be YYYY-MM-DD.",
+            });
           }
         }
       }
