@@ -12,7 +12,8 @@ export interface ValidationSchema {
       | "array"
       | "object"
       | "email"
-      | "date";
+      | "date"
+      | "url";
     required?: boolean;
     minLength?: number;
     maxLength?: number;
@@ -111,6 +112,15 @@ export class Validator {
               field,
               message: "Invalid date format. Must be YYYY-MM-DD.",
             });
+          }
+        }
+        if (rules.type === "url") {
+          if (
+            !/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/.test(
+              value
+            )
+          ) {
+            errors.push({ field, message: "Invalid URL." });
           }
         }
       }

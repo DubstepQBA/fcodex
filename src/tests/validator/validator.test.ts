@@ -1,4 +1,4 @@
-import { Validator, ValidationSchema } from "../modules/validator/validator";
+import { Validator, ValidationSchema } from "../../modules/validator/validator";
 
 describe("Validator class", () => {
   it("should validate a valid string", () => {
@@ -242,6 +242,41 @@ describe("Validator class", () => {
       {
         field: "name",
         message: `Must be at most ${schema.name.maxLength} characters long.`,
+      },
+    ]);
+  });
+
+  it("should validate a url", () => {
+    const schema: ValidationSchema = {
+      name: {
+        type: "url",
+        required: true,
+      },
+    };
+    const validator = new Validator(schema);
+    const data = {
+      name: "https://google.com",
+    };
+    const errors = validator.validate(data);
+    expect(errors).toEqual([]);
+  });
+
+  it("should validate invalidate a url", () => {
+    const schema: ValidationSchema = {
+      name: {
+        type: "url",
+        required: true,
+      },
+    };
+    const validator = new Validator(schema);
+    const data = {
+      name: "https:/google.com",
+    };
+    const errors = validator.validate(data);
+    expect(errors).toEqual([
+      {
+        field: "name",
+        message: "Invalid URL.",
       },
     ]);
   });

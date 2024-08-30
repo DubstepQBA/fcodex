@@ -1,5 +1,5 @@
 import { IncomingMessage } from "http";
-import { Request } from "../core/request";
+import { Request } from "../../core/request";
 import { Socket } from "net";
 
 describe("Request class", () => {

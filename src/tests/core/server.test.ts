@@ -1,7 +1,7 @@
 import http from "http";
-import { Server } from "../core/server";
-import { Request } from "../core/request";
-import { Response } from "../core/response";
+import { Server } from "../../core/server";
+import { Request } from "../../core/request";
+import { Response } from "../../core/response";
 
 // Configuración de una aplicación de ejemplo con todos los endpoints
 const app = new Server();

@@ -1,5 +1,5 @@
 import { ServerResponse } from "http";
-import { Response } from "../core/response"; // Ajusta la ruta según sea necesario
+import { Response } from "../../core/response"; // Ajusta la ruta según sea necesario
 
 describe("Response class", () => {
   let mockRes: jest.Mocked<ServerResponse>;
