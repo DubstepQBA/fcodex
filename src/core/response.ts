@@ -119,6 +119,11 @@ export class Response extends EventEmitter {
     return this;
   }
 
+  /**
+   * Envía una respuesta con el contenido proporcionado.
+   * @param body - El contenido a enviar. Puede ser un string, un buffer, un objeto o null/undefined.
+   * @returns void
+   */
   send(body?: any): void {
     if (!this.ensureHeadersNotSent()) return;
 

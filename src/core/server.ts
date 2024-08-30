@@ -36,6 +36,13 @@ export class Server {
     return this._router;
   }
 
+  /**
+   * Handles an incoming request by calling the middlewares in order and then
+   * passing the request to the router to find a matching route.
+   *
+   * @param req - The incoming request.
+   * @param res - The response to send.
+   */
   private async handleRequest(
     req: IncomingMessage,
     res: ServerResponse
@@ -65,6 +72,13 @@ export class Server {
     }
   }
 
+  /**
+   * Handles an error by logging it to the console and sending a 500 response
+   * to the client if no headers have been sent yet.
+   *
+   * @param error - The error to handle.
+   * @param res - The response to send.
+   */
   private handleError(error: any, res: Response): void {
     console.error("Server error:", error);
     if (!res.headersSent) {

@@ -36,39 +36,92 @@ export class Router {
     });
   }
 
-  // Método para agregar middlewares globales al router
+  /**
+   * Adds a middleware to the router.
+   *
+   * @param middleware - The middleware to add.
+   * @returns The router instance, to enable method chaining.
+   */
   use(middleware: Middleware) {
     this.middlewares.push(middleware);
   }
 
-  // Métodos para añadir rutas individuales con sus respectivos manejadores
+  /**
+   * Adds a route that responds to GET requests.
+   *
+   * @param path The path for the route.
+   * @param handler The handler function for the route.
+   * @param middlewares The middlewares for the route.
+   */
   get(path: string, handler: Handler, middlewares: Middleware[] = []) {
     this.addRoute("GET", path, handler, middlewares);
   }
 
+  /**
+   * Adds a route that responds to POST requests.
+   *
+   * @param path The path for the route.
+   * @param handler The handler function for the route.
+   * @param middlewares The middlewares for the route.
+   */
   post(path: string, handler: Handler, middlewares: Middleware[] = []) {
     this.addRoute("POST", path, handler, middlewares);
   }
 
+  /**
+   * Adds a route that responds to DELETE requests.
+   *
+   * @param path The path for the route.
+   * @param handler The handler function for the route.
+   * @param middlewares The middlewares for the route.
+   */
   delete(path: string, handler: Handler, middlewares: Middleware[] = []) {
     this.addRoute("DELETE", path, handler, middlewares);
   }
 
+  /**
+   * Adds a route that responds to PUT requests.
+   *
+   * @param path The path for the route.
+   * @param handler The handler function for the route.
+   * @param middlewares The middlewares for the route.
+   */
   put(path: string, handler: Handler, middlewares: Middleware[] = []) {
     this.addRoute("PUT", path, handler, middlewares);
   }
 
+  /**
+   * Adds a route that responds to PATCH requests.
+   *
+   * @param path The path for the route.
+   * @param handler The handler function for the route.
+   * @param middlewares The middlewares for the route.
+   */
   patch(path: string, handler: Handler, middlewares: Middleware[] = []) {
     this.addRoute("PATCH", path, handler, middlewares);
   }
 
-  // Método para anidar routers
+  /**
+   * Mounts another router instance at a given path.
+   *
+   * @param prefix The path prefix to use for the mounted router.
+   * @param router The router instance to mount.
+   */
   useRouter(prefix: string, router: Router) {
     router.basePath = `${this.basePath}${prefix}`;
     this.routes.push(...router.routes);
   }
 
-  // Ejecutar middlewares en orden
+  /**
+   * Executes the given middlewares in order, passing the request, response
+   * and a callback to each middleware. When all middlewares have been
+   * executed, the callback given to this method will be called.
+   *
+   * @param middlewares The middlewares to execute.
+   * @param req The request object.
+   * @param res The response object.
+   * @param next The callback to call when all middlewares have been executed.
+   */
   private async executeMiddlewares(
     middlewares: Middleware[],
     req: Request,
@@ -88,7 +141,15 @@ export class Router {
     await exec();
   }
 
-  // Buscar una ruta que coincida con la solicitud
+  /**
+   * Finds a route matching the given method and path.
+   *
+   * @param method The HTTP method to search for.
+   * @param path The path to search for.
+   *
+   * @returns An object containing the handler, middlewares and params associated with the route,
+   * or `undefined` if no matching route was found.
+   */
   private findRoute(
     method: Method,
     path: string
@@ -118,7 +179,15 @@ export class Router {
     return undefined;
   }
 
-  // Manejo de la solicitud
+  /**
+   * Handles an incoming request by executing the global middlewares and then
+   * searching for a matching route. If a route is found, the route's middlewares
+   * are executed and then the route's handler is called with the request and
+   * response objects. If no route is found, the `handleNotFound` method is called.
+   *
+   * @param req The incoming request.
+   * @param res The response object.
+   */
   async handleRequest(req: Request, res: Response) {
     await this.executeMiddlewares(this.middlewares, req, res, async () => {
       const [path] = req.url.split("?");
@@ -138,7 +207,12 @@ export class Router {
     });
   }
 
-  // Parseo de parámetros de consulta
+  /**
+   * Parses the query parameters from the request URL and stores them in the
+   * request's `query` property.
+   *
+   * @param req The incoming request.
+   */
   private parseQueryParams(req: Request) {
     const queryString = req.url.split("?")[1];
     if (queryString) {
@@ -150,7 +224,12 @@ export class Router {
     }
   }
 
-  // Manejo de rutas no encontradas
+  /**
+   * Handles a 404 Not Found response, sending a "Not Found" message.
+   *
+   * @param req The incoming request.
+   * @param res The response to send.
+   */
   private handleNotFound(req: Request, res: Response) {
     res.status(404).send("Not Found");
   }
