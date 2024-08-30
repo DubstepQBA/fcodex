@@ -1,4 +1,5 @@
 import http, { IncomingMessage, ServerResponse } from "http";
+import { config } from "../config";
 import { Router } from "./router";
 import { Request } from "./request";
 import { Response } from "./response";
@@ -15,11 +16,22 @@ export class Server {
     this._router = new Router();
   }
 
+  /**
+   * Adds a middleware to the server.
+   *
+   * @param middleware - The middleware to add.
+   * @returns The server instance, to enable method chaining.
+   */
   use(middleware: Middleware): this {
     this.middlewares.push(middleware);
     return this; // Enable method chaining
   }
 
+  /**
+   * Returns the router instance.
+   *
+   * @returns The router instance.
+   */
   get router(): Router {
     return this._router;
   }
@@ -60,9 +72,22 @@ export class Server {
     }
   }
 
-  listen(port: number, callback?: () => void): http.Server {
+  /**
+   * Start the server and listen for incoming requests.
+   * @param port Port number to listen on. Defaults to the value of `config.PORT`.
+   * @param callback Optional callback to be called when the server is listening.
+   * @returns The underlying `http.Server` instance.
+   * @throws {Error} If the server is already running.
+   */
+  listen(port?: number, callback?: () => void): http.Server {
     if (this.server) {
       throw new Error("Server is already running");
+    }
+    if (!port) {
+      port = config.PORT;
+    }
+    if (typeof callback !== "function" || callback === null) {
+      callback = () => {};
     }
 
     this.server = http.createServer(this.handleRequest.bind(this));
@@ -71,6 +96,11 @@ export class Server {
     return this.server;
   }
 
+  /**
+   * Close the server and stop listening for incoming requests.
+   * @param callback Optional callback to be called when the server is closed.
+   * @throws {Error} If the server is not running.
+   */
   close(callback?: (err?: Error) => void): void {
     if (this.server) {
       this.server.close(callback);

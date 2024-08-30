@@ -23,9 +23,6 @@ Para comenzar a usar el framework, puedes crear un proyecto en npm. Crea un inde
        const app = new Server();
        const router = app.router;
 
-       // Usar el middleware de logging (opcional)
-       app.use(loggerMiddleware);
-
        router.get("/hello", (req, res) => {
        res.status(200).send("Hello");
        });
