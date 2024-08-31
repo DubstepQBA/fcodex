@@ -18,7 +18,7 @@ describe("Response class", () => {
     response = new Response(mockRes);
   });
 
-  test("should send a plain text response", () => {
+  it("should send a plain text response", () => {
     response.send("Hello, world!");
 
     expect(mockRes.setHeader).toHaveBeenCalledWith(
@@ -33,7 +33,7 @@ describe("Response class", () => {
     expect(mockRes.end).toHaveBeenCalled();
   });
 
-  test("should send a JSON response", () => {
+  it("should send a JSON response", () => {
     const data = { key: "value" };
     response.json(data);
 
@@ -49,7 +49,7 @@ describe("Response class", () => {
     expect(mockRes.end).toHaveBeenCalled();
   });
 
-  test("should send a buffer response", () => {
+  it("should send a buffer response", () => {
     const buffer = Buffer.from("buffer data");
     response.send(buffer);
 
@@ -61,7 +61,7 @@ describe("Response class", () => {
     expect(mockRes.end).toHaveBeenCalled();
   });
 
-  test("should set status code and send response", () => {
+  it("should set status code and send response", () => {
     response.status(404).send("Not Found");
 
     expect(mockRes.statusCode).toBe(404);
@@ -71,5 +71,10 @@ describe("Response class", () => {
       undefined
     );
     expect(mockRes.end).toHaveBeenCalled();
+  });
+
+  it("sets Content-Type header to text/html", () => {
+    response.html("<html></html>");
+    expect(mockRes.setHeader).toHaveBeenCalledWith("Content-Type", "text/html");
   });
 });
