@@ -1,9 +1,12 @@
-import crypto from "crypto";
+import { createHmacSignature, verifyHmacSignature } from "./algorithms/HMAC";
+import { createRsaSignature, verifyRsaSignature } from "./algorithms/RSA";
 
 export interface JwtConfig {
-  secretKey: string;
+  secretKey: string; // Para HMAC
+  privateKey?: string; // Para RSA
+  publicKey?: string; // Para RSA
   expiresIn: string;
-  algorithm: "HS256" | "HS384" | "HS512"; // Permitimos más algoritmos seguros
+  algorithm: "HS256" | "HS384" | "HS512" | "RS256" | "RS384" | "RS512";
 }
 
 export interface JwtPayload {
@@ -23,69 +26,89 @@ let CONFIG: JwtConfig = {
   algorithm: "HS256",
 };
 
-/**
- * Configura las opciones para la generación de tokens JWT.
- *
- * @param options Opciones para la configuración:
- *   - secretKey: Clave secreta para firmar los tokens (por defecto, "key_default").
- *   - expiresIn: Tiempo de expiración de los tokens (por defecto, "1h").
- *   - algorithm: Algoritmo para firmar los tokens (por defecto, "HS256").
- */
 export function configureAuth(options: Partial<JwtConfig>) {
   CONFIG = { ...CONFIG, ...options };
 }
 
 function base64urlEncode(str: string): string {
-  return Buffer.from(str)
-    .toString("base64")
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
+  return Buffer.from(str).toString("base64url");
 }
 
 function base64urlDecode(str: string): string {
-  str = str.replace(/-/g, "+").replace(/_/g, "/");
-  while (str.length % 4) {
-    str += "=";
+  return Buffer.from(str, "base64url").toString();
+}
+
+function createSignature(data: string): string {
+  if (CONFIG.algorithm.startsWith("HS")) {
+    // Asegúrate de que el algoritmo sea uno de los permitidos por createHmacSignature
+    return createHmacSignature(
+      data,
+      CONFIG.secretKey,
+      CONFIG.algorithm as "HS256" | "HS384" | "HS512"
+    );
+  } else if (CONFIG.algorithm.startsWith("RS")) {
+    if (!CONFIG.privateKey) {
+      throw new Error("Private key is required for RSA algorithms");
+    }
+    return createRsaSignature(
+      data,
+      CONFIG.privateKey,
+      CONFIG.algorithm as "RS256" | "RS384" | "RS512"
+    );
+  } else {
+    throw new Error("Unsupported algorithm");
   }
-  return Buffer.from(str, "base64").toString();
 }
 
-function createSignature(
-  header: JwtHeader,
-  payload: JwtPayload,
-  secret: string
-): string {
-  const data = `${base64urlEncode(JSON.stringify(header))}.${base64urlEncode(
-    JSON.stringify(payload)
-  )}`;
-  return crypto
-    .createHmac(CONFIG.algorithm, secret)
-    .update(data)
-    .digest("base64")
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
+function verifySignature(data: string, signature: string): boolean {
+  if (CONFIG.algorithm.startsWith("HS")) {
+    return verifyHmacSignature(
+      data,
+      signature,
+      CONFIG.secretKey,
+      CONFIG.algorithm as "HS256" | "HS384" | "HS512"
+    );
+  } else if (CONFIG.algorithm.startsWith("RS")) {
+    if (!CONFIG.publicKey) {
+      throw new Error("Public key is required for RSA algorithms");
+    }
+    return verifyRsaSignature(
+      data,
+      signature,
+      CONFIG.publicKey,
+      CONFIG.algorithm as "RS256" | "RS384" | "RS512"
+    );
+  } else {
+    throw new Error("Unsupported algorithm");
+  }
 }
 
-function verifySignature(token: string, secret: string): boolean {
-  const [headerB64, payloadB64, signature] = token.split(".");
-  if (!headerB64 || !payloadB64 || !signature) return false;
+function calculateExpiration(expiresIn: string): number {
+  const currentTime = Math.floor(Date.now() / 1000);
+  const match = expiresIn.match(/(\d+)([hms])/);
 
-  const header: JwtHeader = JSON.parse(base64urlDecode(headerB64));
-  const payload: JwtPayload = JSON.parse(base64urlDecode(payloadB64));
+  if (!match) throw new Error("Invalid expiration format");
 
-  const expectedSignature = createSignature(header, payload, secret);
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  );
+  const value = parseInt(match[1]);
+  const unit = match[2];
+
+  switch (unit) {
+    case "h":
+      return currentTime + value * 3600;
+    case "m":
+      return currentTime + value * 60;
+    case "s":
+      return currentTime + value;
+    default:
+      return currentTime + 3600;
+  }
 }
 
 /**
- * Genera un token JWT con la carga útil especificada y la clave secreta configurada.
- * @param payload Carga útil a incluir en el token
- * @returns El token JWT generado
+ * Generates a JWT token with the given payload.
+ *
+ * @param payload - The payload to encode in the JWT token.
+ * @returns The generated JWT token as a string.
  */
 export function generateJWT(payload: JwtPayload): string {
   const header: JwtHeader = {
@@ -94,65 +117,53 @@ export function generateJWT(payload: JwtPayload): string {
   };
 
   const currentTime = Math.floor(Date.now() / 1000);
-  let exp: number;
-
-  if (CONFIG.expiresIn.endsWith("h")) {
-    exp = currentTime + parseInt(CONFIG.expiresIn) * 3600;
-  } else if (CONFIG.expiresIn.endsWith("m")) {
-    exp = currentTime + parseInt(CONFIG.expiresIn) * 60;
-  } else if (CONFIG.expiresIn.endsWith("s")) {
-    exp = currentTime + parseInt(CONFIG.expiresIn);
-  } else {
-    exp = currentTime + 3600; // Predeterminado a 1 hora
-  }
-
   const fullPayload: JwtPayload = {
     ...payload,
-    exp,
-    iat: currentTime, // Incluir issued at time (iat)
+    exp: calculateExpiration(CONFIG.expiresIn),
+    iat: currentTime,
   };
 
   const headerEncoded = base64urlEncode(JSON.stringify(header));
   const payloadEncoded = base64urlEncode(JSON.stringify(fullPayload));
-  const signature = createSignature(header, fullPayload, CONFIG.secretKey);
+  const signature = createSignature(`${headerEncoded}.${payloadEncoded}`);
 
   return `${headerEncoded}.${payloadEncoded}.${signature}`;
 }
 
 /**
- * Verifica si el token JWT es válido.
- * @param token El token JWT a verificar
- * @returns Un objeto con la siguiente estructura:
- *   - `valid`: Un booleano que indica si el token es válido o no.
- *   - `payload`: La carga útil del token, si `valid` es `true`.
- *   - `message`: Un mensaje de error, si `valid` es `false`.
+ * Verifies a given JWT token and returns its payload if valid.
+ * @param token The JWT token to verify.
+ * @returns An object with the following properties:
+ *   - valid: A boolean indicating if the token is valid.
+ *   - payload: The payload of the token if valid, or undefined.
+ *   - message: A string describing the reason why the token is invalid, or undefined.
  */
 export function verifyJWT(token: string): {
   valid: boolean;
   payload?: JwtPayload;
   message?: string;
 } {
-  const [headerB64, payloadB64, signature] = token.split(".");
-  if (!headerB64 || !payloadB64 || !signature) {
-    return { valid: false, message: "Token incompleto" };
-  }
-
-  const isValidSignature = verifySignature(token, CONFIG.secretKey);
-  if (!isValidSignature) {
-    return { valid: false, message: "Firma inválida" };
-  }
-
-  let payload: JwtPayload;
   try {
-    payload = JSON.parse(base64urlDecode(payloadB64));
+    const [headerB64, payloadB64, signature] = token.split(".");
+
+    if (!headerB64 || !payloadB64 || !signature) {
+      return { valid: false, message: "Incomplete token" };
+    }
+
+    const data = `${headerB64}.${payloadB64}`;
+
+    if (!verifySignature(data, signature)) {
+      return { valid: false, message: "Invalid signature" };
+    }
+
+    const payload: JwtPayload = JSON.parse(base64urlDecode(payloadB64));
+    const currentTime = Math.floor(Date.now() / 1000);
+
+    if (payload.exp && currentTime > payload.exp) {
+      return { valid: false, message: "Token expired" };
+    }
+    return { valid: true, payload };
   } catch (error) {
-    return { valid: false, message: "Payload inválido" };
+    return { valid: false, message: "Invalid token structure or payload" };
   }
-
-  const currentTime = Math.floor(Date.now() / 1000);
-  if (payload.exp && currentTime > payload.exp) {
-    return { valid: false, message: "Token expirado" };
-  }
-
-  return { valid: true, payload };
 }
