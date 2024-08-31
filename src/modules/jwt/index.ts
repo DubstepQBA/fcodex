@@ -3,10 +3,13 @@ import crypto from "crypto";
 export interface JwtConfig {
   secretKey: string;
   expiresIn: string;
+  algorithm: "HS256" | "HS384" | "HS512"; // Permitimos más algoritmos seguros
 }
+
 export interface JwtPayload {
   [key: string]: any;
   exp?: number;
+  iat?: number;
 }
 
 export interface JwtHeader {
@@ -17,14 +20,16 @@ export interface JwtHeader {
 let CONFIG: JwtConfig = {
   secretKey: "key_default",
   expiresIn: "1h",
+  algorithm: "HS256",
 };
 
 /**
- * Configura las opciones para la generaci n de tokens JWT.
+ * Configura las opciones para la generación de tokens JWT.
  *
- * @param options Opciones para la configuraci n:
+ * @param options Opciones para la configuración:
  *   - secretKey: Clave secreta para firmar los tokens (por defecto, "key_default").
- *   - expiresIn: Tiempo de expiraci n de los tokens en segundos (por defecto, "1h").
+ *   - expiresIn: Tiempo de expiración de los tokens (por defecto, "1h").
+ *   - algorithm: Algoritmo para firmar los tokens (por defecto, "HS256").
  */
 export function configureAuth(options: Partial<JwtConfig>) {
   CONFIG = { ...CONFIG, ...options };
@@ -55,7 +60,7 @@ function createSignature(
     JSON.stringify(payload)
   )}`;
   return crypto
-    .createHmac("sha256", secret)
+    .createHmac(CONFIG.algorithm, secret)
     .update(data)
     .digest("base64")
     .replace(/=/g, "")
@@ -71,22 +76,20 @@ function verifySignature(token: string, secret: string): boolean {
   const payload: JwtPayload = JSON.parse(base64urlDecode(payloadB64));
 
   const expectedSignature = createSignature(header, payload, secret);
-  return signature === expectedSignature;
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expectedSignature)
+  );
 }
 
 /**
  * Genera un token JWT con la carga útil especificada y la clave secreta configurada.
- * La carga útil se serializa en JSON y se codifica en base64url.
- * La firma se crea con el algoritmo HS256 y se codifica en base64url.
- * El token se devuelve en formato xxxxxxx.yyyyyyy.zzzzzzz, donde xxxxxxx es el header
- * codificado en base64url, yyyyyyy es la carga útil codificada en base64url y zzzzzzz
- * es la firma codificada en base64url.
  * @param payload Carga útil a incluir en el token
  * @returns El token JWT generado
  */
 export function generateJWT(payload: JwtPayload): string {
   const header: JwtHeader = {
-    alg: "HS256",
+    alg: CONFIG.algorithm,
     typ: "JWT",
   };
 
@@ -103,7 +106,11 @@ export function generateJWT(payload: JwtPayload): string {
     exp = currentTime + 3600; // Predeterminado a 1 hora
   }
 
-  const fullPayload: JwtPayload = { ...payload, exp };
+  const fullPayload: JwtPayload = {
+    ...payload,
+    exp,
+    iat: currentTime, // Incluir issued at time (iat)
+  };
 
   const headerEncoded = base64urlEncode(JSON.stringify(header));
   const payloadEncoded = base64urlEncode(JSON.stringify(fullPayload));
