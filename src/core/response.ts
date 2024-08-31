@@ -176,4 +176,18 @@ export class Response extends EventEmitter {
   get headersSent(): boolean {
     return this._headersSent;
   }
+
+  /**
+   * Render HTML response.
+   *
+   * This method will set the `Content-Type` header to `text/html` and
+   * send the provided HTML string.
+   *
+   * @param {string} html - The HTML string to send.
+   */
+  html(html: string): void {
+    if (!this.ensureHeadersNotSent()) return;
+    this.setHeader("Content-Type", "text/html");
+    this.send(html);
+  }
 }
