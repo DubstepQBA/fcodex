@@ -40,7 +40,6 @@ function base64urlDecode(str: string): string {
 
 function createSignature(data: string): string {
   if (CONFIG.algorithm.startsWith("HS")) {
-    // Asegúrate de que el algoritmo sea uno de los permitidos por createHmacSignature
     return createHmacSignature(
       data,
       CONFIG.secretKey,

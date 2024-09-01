@@ -4,6 +4,7 @@ import { Router } from "./router";
 import { Request } from "./request";
 import { Response } from "./response";
 import { logger } from "../modules";
+import { errorHandlerManager } from "../modules/ErrorManager/errorHandler";
 
 type Middleware = (req: Request, res: Response, next: () => void) => void;
 
@@ -24,7 +25,8 @@ export class Server {
    */
   use(middleware: Middleware): this {
     this.middlewares.push(middleware);
-    return this; // Enable method chaining
+    this.middlewares.push(errorHandlerManager);
+    return this;
   }
 
   /**
@@ -82,7 +84,11 @@ export class Server {
   private handleError(error: any, res: Response): void {
     console.error("Server error:", error);
     if (!res.headersSent) {
-      res.status(500).send({ error: "Internal Server Error" });
+      res.status(error.statusCode).send({ error: error.message });
+    } else {
+      if (!res.headersSent) {
+        res.status(500).send({ error: "Internal Server Error" });
+      }
     }
   }
 

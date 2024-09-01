@@ -9,29 +9,39 @@ const colors = {
   error: "\x1b[31m", // Rojo
 };
 
+/**
+ * Gets the appropriate color based on the status code.
+ */
+const getStatusColor = (statusCode: number): string => {
+  if (statusCode >= 500) {
+    return colors.error;
+  } else if (statusCode >= 400) {
+    return colors.warning;
+  } else if (statusCode >= 200) {
+    return colors.success;
+  } else {
+    return colors.info;
+  }
+};
+
+/**
+ * Logger middleware that logs request and response information with color-coded output.
+ */
 export const logger = async (req: Request, res: Response, next: () => void) => {
   const startTime = process.hrtime();
 
-  // Log the basic request info with an info color
   console.log(
     `${colors.info}[INFO] [${new Date().toISOString()}] ${req.method} ${
       req.url
     }${colors.reset}`
   );
 
-  // Verificar si `res` tiene el método `on`
   res.on("finish", () => {
     const [seconds, nanoseconds] = process.hrtime(startTime);
     const elapsedTime = (seconds * 1e9 + nanoseconds) / 1e6; // Convertir a milisegundos
 
-    let statusColor = colors.success;
-    if (res.statusCode >= 500) {
-      statusColor = colors.error;
-    } else if (res.statusCode >= 400) {
-      statusColor = colors.warning;
-    }
+    const statusColor = getStatusColor(res.statusCode);
 
-    // Log the detailed response info with appropriate status color
     console.log(
       `${statusColor}[${new Date().toISOString()}] ${req.method} ${req.url} - ${
         res.statusCode
@@ -42,19 +52,18 @@ export const logger = async (req: Request, res: Response, next: () => void) => {
   try {
     await next();
   } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error(
-        `${colors.error}[ERROR] [${new Date().toISOString()}] ${error.message}${
-          colors.reset
-        }`
-      );
-    } else {
-      console.error(
-        `${colors.error}[ERROR] [${new Date().toISOString()}] Unknown error${
-          colors.reset
-        }`
-      );
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+
+    console.error(
+      `${colors.error}[ERROR] [${new Date().toISOString()}] ${errorMessage}${
+        colors.reset
+      }`
+    );
+
+    if (!res.headersSent) {
+      res.status(500).send("Internal Server Error");
     }
-    res.status(500).send("Internal Server Error");
+  } finally {
   }
 };
