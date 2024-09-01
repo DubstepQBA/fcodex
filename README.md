@@ -39,6 +39,7 @@ Para comenzar a usar el framework, puedes crear un proyecto en npm. Crea un inde
 
 # Features
 
+- [x] Soporte nativo de JWT sin dependencia
 - [x] Soporte para Query Parameters
 - [x] Soporte para Middleware Asíncrono
 - [x] Soporte para Middleware Global y de Rutas Específicas
@@ -46,7 +47,7 @@ Para comenzar a usar el framework, puedes crear un proyecto en npm. Crea un inde
 - [x] CORS (Cross-Origin Resource Sharing)
 - [x] Rutas Dinámicas
 - [x] Generador de Código para Esqueletos de Proyecto
-- [x] Soporte para Validación de Datos
+- [x] Soporte para Validación de Datos sin dependencia
 - [x] Configuración Centralizada
 - [x] Soporte de Decoradores para Contoller y Rutas
 - [ ] Autenticación y Autorización
