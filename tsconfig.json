@@ -16,6 +16,7 @@
     "skipLibCheck": true, // Omitir verificación de tipos en archivos .d.ts
     "forceConsistentCasingInFileNames": true, // Fuerza la coherencia en el uso de mayúsculas y minúsculas en los nombres de archivos
     /* Module Resolution Options */
+    "experimentalDecorators": true,
     "moduleResolution": "node", // Estrategia de resolución de módulos
     "resolveJsonModule": true, // Permite la importación de módulos JSON
     "allowSyntheticDefaultImports": true, // Permite importaciones por defecto para módulos sin exportación por defecto

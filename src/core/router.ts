@@ -1,9 +1,13 @@
 import { Request, Response } from "./";
 import { match, MatchFunction } from "path-to-regexp";
 
-type Method = "GET" | "POST" | "DELETE" | "PUT" | "PATCH";
-type Handler = (req: Request, res: Response) => void;
-type Middleware = (req: Request, res: Response, next: () => void) => void;
+export type Method = "GET" | "POST" | "DELETE" | "PUT" | "PATCH";
+export type Handler = (req: Request, res: Response) => void;
+export type Middleware = (
+  req: Request,
+  res: Response,
+  next: () => void
+) => void;
 
 interface Route {
   method: Method;
@@ -21,7 +25,14 @@ export class Router {
     this.basePath = basePath;
   }
 
-  // Método para agregar rutas con middlewares específicos
+  /**
+   * Adds a route to the router.
+   *
+   * @param method The HTTP method that the route responds to.
+   * @param path The path that the route responds to.
+   * @param handler The handler function that will be called when the route is matched.
+   * @param middlewares The middlewares that should be executed before the handler.
+   */
   private addRoute(
     method: Method,
     path: string,
@@ -30,7 +41,7 @@ export class Router {
   ) {
     this.routes.push({
       method,
-      path: `${this.basePath}${path}`,
+      path: `${this.basePath}${path}`.replace(/\/+/g, "/"),
       handler,
       middlewares,
     });
@@ -150,23 +161,16 @@ export class Router {
    * @returns An object containing the handler, middlewares and params associated with the route,
    * or `undefined` if no matching route was found.
    */
-  private findRoute(
-    method: Method,
-    path: string
-  ):
-    | {
-        handler: Handler;
-        middlewares: Middleware[];
-        params: Record<string, string>;
-      }
-    | undefined {
+  public findRoute(method: Method, path: string) {
+    path = path.replace(/\/+/g, "/"); // Normaliza la ruta solicitada
+    console.log(`Finding route: ${method} ${path}`); // Debug log
     for (const route of this.routes) {
+      const normalizedRoutePath = route.path.replace(/\/+/g, "/"); // Normaliza la ruta almacenada
+      console.log(`Checking route: ${route.method} ${normalizedRoutePath}`); // Debug log
       if (route.method === method) {
-        const matchFn: MatchFunction<Record<string, string>> = match(
-          route.path
-        );
+        const matchFn: MatchFunction<Record<string, string>> =
+          match(normalizedRoutePath);
         const matchResult = matchFn(path);
-
         if (matchResult) {
           return {
             handler: route.handler,

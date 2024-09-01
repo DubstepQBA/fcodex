@@ -47,7 +47,8 @@ Para comenzar a usar el framework, puedes crear un proyecto en npm. Crea un inde
 - [x] Rutas Dinámicas
 - [x] Generador de Código para Esqueletos de Proyecto
 - [x] Soporte para Validación de Datos
-- [ ] Configuración Centralizada
+- [x] Configuración Centralizada
+- [x] Soporte de Decoradores para Contoller y Rutas
 - [ ] Autenticación y Autorización
 
 ## Métrica autocannon
