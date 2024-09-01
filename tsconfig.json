@@ -23,7 +23,8 @@
     "isolatedModules": true, // Trata cada archivo como un módulo independiente
     /* Advanced Options */
     "incremental": true, // Compilación incremental para mejorar el rendimiento
-    "noImplicitAny": false // Si se debe generar un error en expresiones y declaraciones con tipo implícito any
+    "noImplicitAny": false, // Si se debe generar un error en expresiones y declaraciones con tipo implícito any
+    "emitDecoratorMetadata": true,
   },
   "include": [
     "src/**/*.ts"
